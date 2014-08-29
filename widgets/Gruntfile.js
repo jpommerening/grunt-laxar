@@ -24,7 +24,7 @@ module.exports = function (grunt) {
                              .replace( /\./g, '/' );
             var proxies = grunt.config( [ 'karma', 'options', 'proxies' ] )
 
-            proxies[ '/base/widgets/' + widget ] = proxies[ '/base' ];
+            proxies[ '/base/widgets/' + widget ] = '/karma';
 
             var template = grunt.file.read( __dirname + '/require_config.js.tmpl' );
             var config = grunt.template.process( template, {
@@ -46,26 +46,30 @@ module.exports = function (grunt) {
    } );
 
    grunt.initConfig( {
-      connect: {
-         options: {
-            hostname: '*',
-            port: Math.floor( Math.random() * 10000 ) + 10000
-         },
-         default: {}
-      },
       karma: {
          options: {
-            reporters: [ 'junit', 'progress' ],
-            proxies: {
-               '/base': 'http://localhost:<%= connect.options.port %>'
-            }
+            reporters: [ 'junit', 'progress', 'coverage' ],
+            plugins: [ require( 'karma-coverage' ) ],
+            preprocessors: {
+               '*.js': 'coverage'
+            },
+            files: [
+               { pattern: '*.*', included: false },
+               { pattern: '*.theme/**', included: false },
+               { pattern: 'spec/**', included: false },
+               { pattern: 'bower_components/**', included: false }
+            ]
          },
          default: {
             laxar: {
                specRunner: 'spec/spec_runner.js'
             },
             junitReporter: {
-               outputFile: 'junit.xml'
+               outputFile: 'test/test-results.xml'
+            },
+            coverageReporter: {
+               type: 'lcovonly',
+               dir: 'test'
             }
          }
       },
@@ -78,6 +82,6 @@ module.exports = function (grunt) {
 
    grunt.task.run( 'autoinit' );
 
-   grunt.registerTask( 'test', [ 'connect', 'karma', 'jshint' ] );
+   grunt.registerTask( 'test', [ 'karma', 'jshint' ] );
    grunt.registerTask( 'default', [ 'test' ] );
 };

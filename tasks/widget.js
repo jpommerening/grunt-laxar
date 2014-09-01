@@ -9,86 +9,61 @@ module.exports = function( grunt ) {
    var path = require( 'path' );
    var _ = grunt.util._;
 
-   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   var patterns = {
+      jshint: [ '**/*.js' ],
+      compass: [ '**/*.scss', '**/*.sass' ]
+   };
 
-   function widgetConfiguration( path, options, config ) {
-      options = _.defaults( options, {
-         karma: {
-            laxar: {
-               specRunner: path + '/spec/spec_runner.js',
-               requireConfig: 'require_config.js'
-            },
-            junitReporter: {
-               outputFile: path + '/test/test-results.xml'
-            },
-            coverageReporter: {
-               dir: path + '/test'
-            }
-         },
-         jshint: {}
-      } );
+   var filters = {
+      jshint: makeFilter( patterns.jshint ),
+      compass: makeFilter( patterns.compass ),
+      karma: function() { return false; }
+   };
 
-      return {
-         karma: _.defaults( {}, config.karma, {
-            options: options.karma
-         } ),
-         jshint: _.defaults( {}, config.jshint, {
-            options: options.jshint,
-            src: [ path + '/*.js',
-                   path + '/!(bower_components|node_modules)/**/*.js' ]
-         } )
+   var defaults = {
+   };
+
+   function makeFilter( patterns ) {
+      return function() {
+         return grunt.file.isMatch( patterns, [].slice.apply( arguments ) );
       };
    }
 
-   //////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    grunt.registerMultiTask( 'widget', 'Run widget specific tasks', function() {
       var widget = this.target;
-      var options = this.options();
+      var options = this.options( {
+      } );
+      var tasks = this.args.length ? this.args : Object.keys( options );
 
-      var config = widgetConfiguration( widget, this.options(), this.data );
+      var files = this.files;
 
-      /* if the spec_runner.js does not exist, remove the karma task */
-      if( !grunt.file.exists( config.karma.options.laxar.specRunner ) ) {
-         grunt.log.warn( 'Widget \'' + widget + '\' has no spec_runner.js!' );
-         delete config.karma;
-      }
-
-      for( var task in config ) {
-         if( config.hasOwnProperty( task ) ) {
-            var key = task + '.' + widget;
-            grunt.config( key, _.defaults( {}, grunt.config( key ), config[ task ] ) );
-         }
-      }
-
-      var tasks = arguments.length ? [].slice.apply( arguments ) : Object.keys( config );
-
-      grunt.log.ok( 'Running ' + grunt.log.wordlist( tasks ) + ' for ' + widget );
-      grunt.task.run( tasks.map( function( task ) {
-         return task + ':' + widget;
-      } ) );
-   } );
-
-   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-   grunt.registerTask( 'widgets', 'Run all or matching widget tasks', function( pattern ) {
-      var widgets = Object.keys( grunt.config( 'widget' ) ).filter( function( widget ) {
-         return (widget !== 'options' );
+      console.log( {
+         widget: widget,
+         options: options,
+         tasks: tasks,
+         files: files
       } );
 
-      if( pattern ) {
-         /* filter the widgets */
-         widgets = grunt.file.match( [ pattern ], widgets );
+      for( var i = 0; i < tasks.length; i++ ) {
+         var task = tasks[i];
+
+         grunt.log.ok( task );
+         grunt.config( [ task, widget ], {
+            options: options[ task ] || {},
+            filter: filters[ task ],
+            files: this.files.map( function( file ) {
+               return {
+                  src: file.src,
+                  dest: file.dest,
+                  filter: filters[ task ]
+               };
+            } )
+         } );
+
+         grunt.task.run( task + ':' + widget );
       }
-
-      var tasks = [].slice.call( arguments, 1 );
-
-      grunt.log.ok( 'Running ' + ( tasks.length ? grunt.log.wordlist( tasks ) : 'tasks' ) + ' for ' + widgets.length + ' widgets' );
-      tasks.unshift( '' );
-      grunt.task.run( widgets.map( function( widget ) {
-         tasks[ 0 ] = widget;
-         return 'widget:' + tasks.join( ':' );
-      } ) );
    } );
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////

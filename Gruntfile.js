@@ -65,7 +65,7 @@ module.exports = function( grunt ) {
    grunt.loadNpmTasks( 'grunt-mocha-cli' );
    grunt.loadNpmTasks( 'grunt-bump' );
 
-   grunt.registerTask( 'test', [ 'clean', 'fixtures', 'mochacli', 'jshint' ] );
+   grunt.registerTask( 'test', [ 'clean', 'mochacli:lib', 'fixtures', 'mochacli:tasks', 'jshint' ] );
    grunt.registerTask( 'default', ['test'] );
 
    grunt.registerTask( 'release', 'Test, bump and publish to NPM.', function( type ) {

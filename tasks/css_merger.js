@@ -158,7 +158,7 @@ module.exports = function( grunt ) {
             var pageLoader = PageLoader.create( q, client, paths.PAGES );
 
             grunt.verbose.writeln( 'Css Merger: initializing widget collector' );
-            return WidgetCollector.create( client, paths.WIDGETS, pageLoader );
+            return WidgetCollector.create( client, pageLoader, paths.WIDGETS );
          }
 
          /////////////////////////////////////////////////////////////////////////////////////////////////////

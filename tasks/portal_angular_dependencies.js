@@ -52,8 +52,8 @@ module.exports = function( grunt ) {
          grunt.verbose.writeln( 'Portal Angular dependencies: initializing widget collector' );
          var widgetCollector = WidgetCollector.create(
             client,
-            paths.WIDGETS,
-            pageLoader
+            pageLoader,
+            paths.WIDGETS
          );
 
          async.each( files, function( file, done ) {

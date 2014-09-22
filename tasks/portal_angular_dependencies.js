@@ -6,25 +6,10 @@
 module.exports = function( grunt ) {
    'use strict';
 
-   var _ = grunt.util._;
+   var async = require( 'async' );
    var path = require( 'path' );
    var q = require( 'q' );
-   var async = require( 'async' );
-
-   // Injected into the WidgetCollector, this uses grunt to read the file
-   // and returns the expected { data: }-object
-   function httpClient() {
-      return {
-         get: function( url ) {
-            var deferred = q.defer();
-            process.nextTick( function() {
-               grunt.verbose.writeln( 'Portal Angular dependencies: reading "' + url + '"' );
-               deferred.resolve( { data: grunt.file.readJSON( url ) } );
-            } );
-            return deferred.promise;
-         }
-      };
-   }
+   var _ = grunt.util._;
 
    function generateBootstrapCode( dependencies ) {
       var requireString = '[\n   \'' + dependencies.join( '\',\n   \'' ) + '\'\n]';
@@ -57,8 +42,9 @@ module.exports = function( grunt ) {
          grunt.verbose.writeln( 'Portal Angular dependencies: loading page loader' );
          var PageLoader = requirejs( 'laxar/lib/portal/portal_assembler/page_loader' );
          var WidgetCollector = require( '../lib/widget_collector' );
+         var HttpClient = require( '../lib/http_client' );
 
-         var client = httpClient();
+         var client = HttpClient.create( options.base );
 
          grunt.verbose.writeln( 'Portal Angular dependencies: page loader' );
          var pageLoader = PageLoader.create( q, client, paths.PAGES );
@@ -66,7 +52,7 @@ module.exports = function( grunt ) {
          grunt.verbose.writeln( 'Portal Angular dependencies: initializing widget collector' );
          var widgetCollector = WidgetCollector.create(
             client,
-            path.relative( config.baseUrl, paths.WIDGETS ),
+            paths.WIDGETS,
             pageLoader
          );
 
@@ -77,7 +63,7 @@ module.exports = function( grunt ) {
             grunt.verbose.writeln( 'Portal Angular dependencies: ' + file.dest );
 
             file.src.forEach( function( flow ) {
-               var promise = widgetCollector.gatherWidgetsAndControls( paths.WIDGETS, flow );
+               var promise = widgetCollector.widgetsAndControlsForFlow( path.relative( options.base, flow ) );
                promises.push( promise.then( function( result ) {
                   _.merge( results, result );
                } ) );
@@ -87,7 +73,7 @@ module.exports = function( grunt ) {
                grunt.file.write( file.dest, generateBootstrapCode( results.widgets.concat( results.controls ) ) );
                grunt.log.ok( 'Created Angular dependencies in "' + file.dest + '".' );
                done();
-            } ).catch( grunt.fail.fatal );
+            }, done );
          }, done );
       } );
 };

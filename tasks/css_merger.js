@@ -35,6 +35,7 @@ module.exports = function( grunt ) {
 
       var flowFiles = this.files;
       var done = this.async();
+
       q.all( collectThemes().map( function( theme ) {
          var mainCss = fixUrls( grunt.file.read( theme.mainFile ), theme.mainFile, options.output );
          var layoutCss = readLayouts( theme, pathToLayouts );
@@ -117,11 +118,12 @@ module.exports = function( grunt ) {
 
          var collectAll = q.all( flowFiles.map( function( file ) {
             return q.all( file.src.map( function( flow ) {
-               return widgetCollector.gatherWidgetsAndControls( paths.WIDGETS, flow ).then( function( result ) {
-                  widgets = widgets.concat( result.widgets.filter( uniqueWidget ) );
-                  controls = controls.concat( result.controls.filter( uniqueControl ) );
-                  return q.when();
-               } );
+               return widgetCollector.widgetsAndControlsForFlow( path.relative( options.base, flow ) )
+                  .then( function( result ) {
+                     widgets = widgets.concat( result.widgets.filter( uniqueWidget ) );
+                     controls = controls.concat( result.controls.filter( uniqueControl ) );
+                     return q.when();
+                  } );
             } ) );
          } ) );
 
@@ -148,13 +150,15 @@ module.exports = function( grunt ) {
             grunt.verbose.writeln( 'Css Merger: loading page loader' );
             var PageLoader = requirejs( 'laxar/lib/portal/portal_assembler/page_loader' );
             var WidgetCollector = require( '../lib/widget_collector' );
-            var client = httpClient();
+            var HttpClient = require( '../lib/http_client' );
+
+            var client = HttpClient.create( base );
 
             grunt.verbose.writeln( 'Css Merger: page loader' );
             var pageLoader = PageLoader.create( q, client, paths.PAGES );
 
             grunt.verbose.writeln( 'Css Merger: initializing widget collector' );
-            return WidgetCollector.create( client, path.relative( config.baseUrl, paths.WIDGETS ), pageLoader );
+            return WidgetCollector.create( client, paths.WIDGETS, pageLoader );
          }
 
          /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,21 +169,6 @@ module.exports = function( grunt ) {
                var isNew = !seenKeys[ key ];
                seenKeys[ key ] = true;
                return isNew;
-            };
-         }
-
-         /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-         function httpClient() {
-            return {
-               get: function( url ) {
-                  var deferred = q.defer();
-                  process.nextTick( function() {
-                     grunt.verbose.writeln( 'Css Merger: reading "' + url + '"' );
-                     deferred.resolve( { data: grunt.file.readJSON( url ) } );
-                  } );
-                  return deferred.promise;
-               }
             };
          }
       }

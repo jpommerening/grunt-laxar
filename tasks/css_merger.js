@@ -44,7 +44,7 @@ module.exports = function( grunt ) {
             grunt.log.ok( 'Created merged css file in "' + outputFilePath + '".' );
             return q.when();
          } );
-      } ) ).then( done );
+      } ) ).then( function() { done(); }, done );
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -132,7 +132,7 @@ module.exports = function( grunt ) {
             } );
 
             var widgetCss = widgets.map( function( widget ) {
-               var widgetPath = path.resolve( path.join( config.baseUrl, widget ) );
+               var widgetPath = path.resolve( config.baseUrl, widget );
                var widgetModulePath = widgetPath.substring( path.join( pathToWidgets, '/' ).length );
                var relativeWidgetPath = widgetModulePath.substring( 0, widgetModulePath.lastIndexOf( '/' ) );
                var fileName = fileNameForWidget( relativeWidgetPath, theme );

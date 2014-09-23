@@ -8,8 +8,8 @@ module.exports = function( grunt ) {
 
    var multiplexTask = require( './lib/multiplex_task' );
    var defaults = {
-   };
 
+   };
    /**
     * Return a function that maps the files property of a config object with the given callback.
     * @param {Function} callback the callback to use for mapping files objects.
@@ -23,7 +23,7 @@ module.exports = function( grunt ) {
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   grunt.registerMultiTask( 'ax-widget', 'Run widget specific tasks', multiplexTask( grunt, defaults, {
+   grunt.registerMultiTask( 'ax-control', 'Run control specific tasks', multiplexTask( grunt, defaults, {
       karma: function( config ) {
          var specRunner = this.target + '/spec/spec_runner.js';
          if( !grunt.file.exists( specRunner ) ) {
@@ -65,3 +65,4 @@ module.exports = function( grunt ) {
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 };
+

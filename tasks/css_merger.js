@@ -27,6 +27,7 @@ module.exports = function( grunt ) {
 
       var base = options.base;
       var pathToDefaultTheme = path.resolve( paths.DEFAULT_THEME );
+      var pathToPages = path.resolve( paths.PAGES );
       var pathToThemes = path.resolve( paths.THEMES );
       var pathToLayouts = path.resolve( paths.LAYOUTS );
       var pathToWidgets = path.resolve( paths.WIDGETS );
@@ -155,10 +156,10 @@ module.exports = function( grunt ) {
             var client = HttpClient.create( base );
 
             grunt.verbose.writeln( 'Css Merger: page loader' );
-            var pageLoader = PageLoader.create( q, client, paths.PAGES );
+            var pageLoader = PageLoader.create( q, client, pathToPages );
 
             grunt.verbose.writeln( 'Css Merger: initializing widget collector' );
-            return WidgetCollector.create( client, pageLoader, paths.WIDGETS );
+            return WidgetCollector.create( client, pageLoader, pathToWidgets );
          }
 
          /////////////////////////////////////////////////////////////////////////////////////////////////////

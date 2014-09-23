@@ -20,13 +20,13 @@ var logger = {
 
 function setupTaskWithConfig( task, config, done ) {
    grunt.log = logger;
-   grunt.loadTasks( 'tasks' );
    grunt.task.options( {
       error: function( err ) {
          done( err );
       },
       done: done
    } );
+   grunt.loadTasks( 'tasks' );
    grunt.initConfig( {} );
    grunt.config( task, config );
 }

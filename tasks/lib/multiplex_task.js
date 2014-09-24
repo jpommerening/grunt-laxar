@@ -26,14 +26,17 @@ module.exports = function( grunt, defaults, adapters ) {
          }
 
          if( config ) {
-            grunt.config( [ task, target ], config );
-            grunt.task.run( task + ':' + target );
+            grunt.config.set( [ task, target ], config );
          } else {
             tasks.splice( i, 1 );
          }
       }
 
       grunt.log.ok( 'Running %s tasks for %s.', tasks.length ? grunt.log.wordlist( tasks ) : 'no', target.cyan );
+
+      tasks.forEach( function( task ) {
+         grunt.task.run( task + ':' + target );
+      } );
    };
 
 };

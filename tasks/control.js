@@ -10,6 +10,7 @@ module.exports = function( grunt ) {
    var defaults = {
 
    };
+
    /**
     * Return a function that maps the files property of a config object with the given callback.
     * @param {Function} callback the callback to use for mapping files objects.

@@ -6,10 +6,10 @@
 module.exports = function( grunt ) {
    'use strict';
 
+   var Application = require( '../lib/application' );
+   var ChangeDistributor = require( './lib/change_distributor' );
    var path = require( 'path' );
-   var requireConfig = require( '../lib/require_config' );
-   var laxarPaths = require( '../lib/laxar_paths' );
-   var q = require( 'q' );
+   var _ = require( 'lodash' );
 
    grunt.registerInitTask( 'ax-init', 'Setup LaxarJS tasks', function() {
       var options = this.options( {
@@ -21,12 +21,11 @@ module.exports = function( grunt ) {
 
       grunt.log.ok( 'Initializing ...' );
 
-      var config = requireConfig( options.requireConfig, options );
-      var paths = laxarPaths( config, options );
-      var requirejs = require( 'requirejs' ).config( config );
+      var app = Application.create( options );
+      var changes = ChangeDistributor.create( grunt );
 
-      var uikit = path.dirname( requirejs.toUrl( 'laxar_uikit' ) );
-      var customization = path.dirname( requirejs.toUrl( 'laxar_uikit_customization' ) );
+      var uikit = path.dirname( app.require.toUrl( 'laxar_uikit' ) );
+      var customization = path.dirname( app.require.toUrl( 'laxar_uikit_customization' ) );
 
       var compassImportPath = grunt.config.get( [ 'compass', 'options', 'importPath' ] ) || [];
 
@@ -36,62 +35,67 @@ module.exports = function( grunt ) {
          uikit + '/themes/default.theme/scss',
       ] ) );
 
-      var HttpClient = require( '../lib/http_client' );
-      var PageLoader = requirejs( 'laxar/lib/portal/portal_assembler/page_loader' );
-      var WidgetCollector = require( '../lib/widget_collector' );
+      grunt.event.setMaxListeners( 11 );
 
-      var httpClient = HttpClient.create( options.base );
+      function normalizePath( module ) {
+         if( module[0] === '/' ) {
+            module = path.relative( app.baseUrl, module );
+         }
+         var url = app.require.toUrl( module );
+         return path.relative( base, url );
+      }
 
-      var pageLoader = PageLoader.create(
-         q,
-         httpClient,
-         paths.PAGES
-      );
+      function configureTarget( task, directory ) {
+         var files = [ directory + '/!(bower_components|node_modules)',
+                       directory + '/!(bower_components|node_modules)/**' ];
 
-      var widgetCollector = WidgetCollector.create(
-         httpClient,
-         pageLoader,
-         paths.WIDGETS
-      );
+         grunt.config.set( [ task, directory ], changes.defineProperty( {
+            options: {}
+         }, 'src', {
+            enumerable: true,
+            value: files
+         } ) );
+         grunt.config.set( [ 'watch', directory ], {
+            options: {
+               spawn: false
+            },
+            files: files,
+            tasks: [ task + ':' + directory ]
+         } );
+      }
 
-      widgetCollector.widgetsAndControlsForFlow( paths.FLOW_JSON ).then( function( result ) {
+      app.widgetsAndControlsForFlow().then( function( result ) {
 
          result.widgets.forEach( function( widget ) {
-            var url = requirejs.toUrl( path.relative( config.baseUrl, widget ) );
-            var directory = path.relative( base, path.dirname( url ) );
-
-            grunt.config.set( [ 'ax-widget', directory ], {
-               options: {},
-               src: [ directory + '/!(bower_components|node_modules)',
-                      directory + '/!(bower_components|node_modules)/**' ]
-            } );
+            var directory = path.dirname( normalizePath( widget ) );
+            configureTarget( 'ax-widget', directory );
          } );
 
          result.controls.forEach( function( control ) {
-            var url = requirejs.toUrl( control );
-            var directory = path.relative( base, url );
-
-            grunt.config.set( [ 'ax-control', directory ], {
-               options: {},
-               src: [ directory + '/!(bower_components|node_modules)',
-                      directory + '/!(bower_components|node_modules)/**' ]
-            } );
+            var directory = normalizePath( control );
+            configureTarget( 'ax-control', directory );
          } );
 
          return result;
       } )
       .then( function( result ) {
+         var controlPaths = _.chain( result.controls )
+            .map( app.require.toUrl )
+            .map( path.dirname )
+            .map( normalizePath )
+            .uniq()
+            .value();
 
-         grunt.log.writeln( '   RequireJS config: ' + options.requireConfig.cyan );
-         grunt.log.writeln( '   Base URL: ' + config.baseUrl.cyan );
-         grunt.log.writeln( '   Flow:     ' + path.relative( base, paths.FLOW_JSON ).cyan );
-         grunt.log.writeln( '   Pages:    ' + path.relative( base, paths.LAYOUTS ).cyan );
-         grunt.log.writeln( '   Layouts:  ' + path.relative( base, paths.PAGES ).cyan );
-         grunt.log.writeln( '   Themes:   ' + path.relative( base, paths.THEMES ).cyan );
-         grunt.log.writeln( '   Widgets:  ' + path.relative( base, paths.WIDGETS ).cyan + ' (' + result.widgets.length + ' widgets)' );
-         grunt.log.writeln( '   Controls: ' + result.controls.length );
-         done();
-      }, done );
+         grunt.log.writeln( '   RequireJS config: ' + app.requireConfig.cyan );
+         grunt.log.writeln( '   Base URL: ' + app.baseUrl.cyan );
+         grunt.log.writeln( '   Flow:     ' + path.relative( base, app.paths.FLOW_JSON ).cyan );
+         grunt.log.writeln( '   Pages:    ' + path.relative( base, app.paths.LAYOUTS ).cyan );
+         grunt.log.writeln( '   Layouts:  ' + path.relative( base, app.paths.PAGES ).cyan );
+         grunt.log.writeln( '   Themes:   ' + path.relative( base, app.paths.THEMES ).cyan );
+         grunt.log.writeln( '   Widgets:  ' + path.relative( base, app.paths.WIDGETS ).cyan + ' (' + result.widgets.length + ' widgets)' );
+         grunt.log.writeln( '   Controls: ' + grunt.log.wordlist( controlPaths ) + ' (' + result.controls.length + ' controls)' );
+      } )
+      .nodeify( done );
 
    } );
 };

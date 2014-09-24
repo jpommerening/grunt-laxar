@@ -6,12 +6,10 @@
 module.exports = function( grunt ) {
    'use strict';
 
-   var requireConfig = require( '../lib/require_config' );
-   var laxarPaths = require( '../lib/laxar_paths' );
+   var Application = require( '../lib/application' );
    var async = require( 'async' );
    var path = require( 'path' );
-   var q = require( 'q' );
-   var _ = grunt.util._;
+   var _ = require( 'lodash' );
 
    function generateBootstrapCode( dependencies ) {
       var requireString = '[\n   \'' + dependencies.join( '\',\n   \'' ) + '\'\n]';
@@ -29,46 +27,21 @@ module.exports = function( grunt ) {
 
          var options = this.options( {
             base: '.',
-            laxar: 'laxar',
-            pages: 'laxar-path-pages',
-            widgets: 'laxar-path-widgets',
             requireConfig: 'require_config.js'
          } );
          var base = path.resolve( options.base );
          var done = this.async();
          var files = this.files;
 
-         var config = requireConfig( options.requireConfig, options );
-         var paths = laxarPaths( config, options );
-         var requirejs = require( 'requirejs' ).config( config );
-
-         var HttpClient = require( '../lib/http_client' );
-         var PageLoader = requirejs( 'laxar/lib/portal/portal_assembler/page_loader' );
-         var WidgetCollector = require( '../lib/widget_collector' );
-
-         var httpClient = HttpClient.create( options.base );
-
-         var pageLoader = PageLoader.create(
-            q,
-            httpClient,
-            paths.PAGES
-         );
-
-         var widgetCollector = WidgetCollector.create(
-            httpClient,
-            pageLoader,
-            paths.WIDGETS
-         );
+         var app = Application.create( options );
 
          async.each( files, function( file, done ) {
             grunt.verbose.writeln( 'Portal Angular dependencies: ' + file.dest );
 
             async.map( file.src, function( src, done ) {
-               return widgetCollector
+               return app.widgetCollector
                   .widgetsAndControlsForFlow( path.resolve( src ) )
-                  .then( function( results ) {
-                     done( null, results );
-                  }, done );
+                  .nodeify( done );
             }, function( err, results ) {
                if( err ) {
                   return done( err );

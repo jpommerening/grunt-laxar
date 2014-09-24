@@ -9,6 +9,7 @@ module.exports = function( grunt ) {
    var Application = require( '../lib/application' );
    var ChangeDistributor = require( './lib/change_distributor' );
    var path = require( 'path' );
+   var q = require( 'q' );
    var _ = require( 'lodash' );
 
    grunt.registerInitTask( 'ax-init', 'Setup LaxarJS tasks', function() {
@@ -45,9 +46,15 @@ module.exports = function( grunt ) {
          return path.relative( base, url );
       }
 
+      function normalizePaths( modules ) {
+         return modules.map( normalizePath );
+      }
+
       function configureTarget( task, directory ) {
          var files = [ directory + '/!(bower_components|node_modules)',
                        directory + '/!(bower_components|node_modules)/**' ];
+
+         grunt.log.verbose.writeln( 'Setup ' + task.cyan + ':' + directory.cyan );
 
          grunt.config.set( [ task, directory ], changes.defineProperty( {
             options: {}
@@ -64,22 +71,35 @@ module.exports = function( grunt ) {
          } );
       }
 
-      app.widgetsAndControlsForFlow().then( function( result ) {
+      q.spread( [
+         app.themes().then( normalizePaths ),
+         app.layoutsForFlow().then( normalizePaths ),
+         app.widgetsForFlow().then( normalizePaths ),
+         app.controlsForFlow().then( normalizePaths )
+      ], function( themes, layouts, widgets, controls ) {
+         widgets = widgets.map( path.dirname );
 
-         result.widgets.forEach( function( widget ) {
-            var directory = path.dirname( normalizePath( widget ) );
+         themes.forEach( function( directory ) {
+            configureTarget( 'ax-theme', directory );
+         } );
+
+         widgets.forEach( function( directory ) {
             configureTarget( 'ax-widget', directory );
          } );
 
-         result.controls.forEach( function( control ) {
-            var directory = normalizePath( control );
+         controls.forEach( function( directory ) {
             configureTarget( 'ax-control', directory );
          } );
 
-         return result;
+         return {
+            themes: themes,
+            layouts: layouts,
+            widgets: widgets,
+            controls: controls
+         };
       } )
       .then( function( result ) {
-         var controlPaths = _.chain( result.controls )
+         var controlPaths = _( result.controls )
             .map( app.require.toUrl )
             .map( path.dirname )
             .map( normalizePath )
@@ -89,11 +109,12 @@ module.exports = function( grunt ) {
          grunt.log.writeln( '   RequireJS config: ' + app.requireConfig.cyan );
          grunt.log.writeln( '   Base URL: ' + app.baseUrl.cyan );
          grunt.log.writeln( '   Flow:     ' + path.relative( base, app.paths.FLOW_JSON ).cyan );
-         grunt.log.writeln( '   Pages:    ' + path.relative( base, app.paths.LAYOUTS ).cyan );
-         grunt.log.writeln( '   Layouts:  ' + path.relative( base, app.paths.PAGES ).cyan );
-         grunt.log.writeln( '   Themes:   ' + path.relative( base, app.paths.THEMES ).cyan );
+         grunt.log.writeln( '   Pages:    ' + path.relative( base, app.paths.PAGES ).cyan );
+         grunt.log.writeln( '   Layouts:  ' + path.relative( base, app.paths.LAYOUTS ).cyan + ' (' + result.layouts.length + ' layouts)' );
+         grunt.log.writeln( '   Themes:   ' + path.relative( base, app.paths.THEMES ).cyan + ' (' + result.themes.length + ' themes)' );
          grunt.log.writeln( '   Widgets:  ' + path.relative( base, app.paths.WIDGETS ).cyan + ' (' + result.widgets.length + ' widgets)' );
          grunt.log.writeln( '   Controls: ' + grunt.log.wordlist( controlPaths ) + ' (' + result.controls.length + ' controls)' );
+         return q.when();
       } )
       .nodeify( done );
 

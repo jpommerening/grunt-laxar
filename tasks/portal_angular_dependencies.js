@@ -47,8 +47,8 @@ module.exports = function( grunt ) {
                   return done( err );
                }
 
-               var widgets = _.chain( results ).pluck( 'widgets' ).flatten().uniq().value();
-               var controls = _.chain( results ).pluck( 'controls' ).flatten().uniq().value();
+               var widgets = _( results ).pluck( 'widgets' ).flatten().uniq().value();
+               var controls = _( results ).pluck( 'controls' ).flatten().uniq().value();
                var code = generateBootstrapCode( widgets.concat( controls ) );
 
                grunt.file.write( file.dest, code );

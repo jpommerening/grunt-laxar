@@ -8,7 +8,9 @@ module.exports = function( grunt ) {
 
    var multiplexTask = require( './lib/multiplex_task' );
    var defaults = {
-
+      karma: {},
+      jshint: {},
+      compass: {}
    };
 
    /**

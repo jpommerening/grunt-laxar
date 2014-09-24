@@ -14,16 +14,15 @@ module.exports = function( grunt ) {
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   grunt.registerMultiTask( 'ax-theme', 'Run theme specific tasks', multiplexTask( grunt, defaults, {
+   grunt.registerMultiTask( 'ax-layout', 'Run layout specific tasks', multiplexTask( grunt, defaults, {
       compass: function( config ) {
-         var basePath = this.target;
+         var basePath = this.target + '/default.theme';
          if( !grunt.file.exists( basePath + '/scss' ) ) {
             return null;
          }
 
          return {
             options: {
-               config: path.join( basePath, 'compass/config.rb' ),
                basePath: basePath
             }
          };

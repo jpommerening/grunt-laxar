@@ -77,12 +77,16 @@ module.exports = function( grunt ) {
          app.widgetsForFlow().then( normalizePaths ),
          app.controlsForFlow().then( normalizePaths )
       ], function( themes, layouts, widgets, controls ) {
-         widgets = widgets.map( path.dirname );
 
          themes.forEach( function( directory ) {
             configureTarget( 'ax-theme', directory );
          } );
 
+         layouts.forEach( function( directory ) {
+            configureTarget( 'ax-layout', directory );
+         } );
+
+         widgets = widgets.map( path.dirname );
          widgets.forEach( function( directory ) {
             configureTarget( 'ax-widget', directory );
          } );

@@ -39,7 +39,7 @@ module.exports = function( grunt ) {
             grunt.verbose.writeln( 'Portal Angular dependencies: ' + file.dest );
 
             async.map( file.src, function( src, done ) {
-               return app.widgetCollector
+               return app.flowTracer
                   .widgetsAndControlsForFlow( path.resolve( src ) )
                   .nodeify( done );
             }, function( err, results ) {

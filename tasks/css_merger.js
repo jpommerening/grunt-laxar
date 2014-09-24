@@ -110,25 +110,41 @@ module.exports = function( grunt ) {
 
       function readWidgetsFromFlow( flowFiles, theme ) {
 
-         var widgetCollector = setupWidgetCollector();
+         var flowTracer = setupFlowTracer();
 
          var widgets = [];
          var controls = [];
+         var layouts = [];
          var uniqueWidget = once();
          var uniqueControl = once();
+         var uniqueLayout = once();
 
          var collectAll = q.all( flowFiles.map( function( file ) {
             return q.all( file.src.map( function( flow ) {
-               return widgetCollector.widgetsAndControlsForFlow( path.relative( options.base, flow ) )
+               var pathToFlow = path.relative( options.base, flow );
+
+               return flowTracer.widgetsAndControlsForFlow( pathToFlow )
                   .then( function( result ) {
                      widgets = widgets.concat( result.widgets.filter( uniqueWidget ) );
                      controls = controls.concat( result.controls.filter( uniqueControl ) );
+                     return flowTracer.layoutsForFlow( pathToFlow );
+                  } )
+                  .then( function( result ) {
+                     layouts = layouts.concat( result.filter( uniqueLayout ) );
                      return q.when();
                   } );
             } ) );
          } ) );
 
          return collectAll.then( function() {
+
+            /*
+            var layoutsCss = layouts.map( function( layoutPath ) {
+               var fileName = fileNameForLayout( layoutPath, theme );
+               return readCss( fileName );
+            } );
+            */
+
             var controlCss = controls.map( function( requireControlPath ) {
                var fileName = fileNameForControl( requireControlPath, theme );
                return readCss( fileName );
@@ -147,19 +163,19 @@ module.exports = function( grunt ) {
 
          /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-         function setupWidgetCollector() {
+         function setupFlowTracer() {
             grunt.verbose.writeln( 'Css Merger: loading page loader' );
             var PageLoader = requirejs( 'laxar/lib/portal/portal_assembler/page_loader' );
-            var WidgetCollector = require( '../lib/widget_collector' );
             var HttpClient = require( '../lib/http_client' );
+            var FlowTracer = require( '../lib/flow_tracer' );
 
             var client = HttpClient.create( base );
 
             grunt.verbose.writeln( 'Css Merger: page loader' );
             var pageLoader = PageLoader.create( q, client, pathToPages );
 
-            grunt.verbose.writeln( 'Css Merger: initializing widget collector' );
-            return WidgetCollector.create( client, pageLoader, pathToWidgets );
+            grunt.verbose.writeln( 'Css Merger: initializing flow tracer' );
+            return FlowTracer.create( client, pageLoader, pathToWidgets, pathToLayouts );
          }
 
          /////////////////////////////////////////////////////////////////////////////////////////////////////

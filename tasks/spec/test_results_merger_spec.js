@@ -9,8 +9,6 @@ var runTask = require( 'grunt-run-task' );
 describe( 'the test_results_merger task', function() {
    'use strict';
 
-   runTask.loadTasks( 'tasks' );
-
    var dir = {
       fixtures: 'tasks/spec/fixtures',
       expected: 'tasks/spec/expected',

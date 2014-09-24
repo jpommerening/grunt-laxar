@@ -120,7 +120,7 @@ module.exports = function( grunt ) {
             options: { spawn: false },
             tasks: [ 'ax-init' ],
             files: Object.keys( traced ).map( function( file ) {
-               return path.relative( base, file )
+               return path.relative( base, file );
             } )
          } );
 

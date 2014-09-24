@@ -7,7 +7,6 @@ var grunt = require( 'grunt' );
 var runTask = require( 'grunt-run-task' );
 
 describe( 'the directory_tree task', function() {
-
    'use strict';
 
    var dir = {

@@ -12,6 +12,27 @@ module.exports = function( grunt ) {
    var q = require( 'q' );
    var _ = require( 'lodash' );
 
+   var app;
+   var changes;
+   var traced;
+
+   var setup = _.once( function( options ) {
+      app = Application.create( options );
+      changes = ChangeDistributor.create( grunt );
+      traced = Object.create( null );
+
+      app.httpClient.on( 'get', function( url ) {
+         grunt.log.verbose.writeln( 'HttpClient: GET ' + url.cyan );
+         traced[ url ] = true;
+      } );
+      grunt.event.on( 'watch', function( action, file ) {
+         var url = path.relative( options.base, file );
+         if( traced[ url ] ) {
+            app.httpClient.del( url );
+         }
+      } );
+   } );
+
    grunt.registerInitTask( 'ax-init', 'Setup LaxarJS tasks', function() {
       var options = this.options( {
          base: '.',
@@ -22,8 +43,7 @@ module.exports = function( grunt ) {
 
       grunt.log.ok( 'Initializing ...' );
 
-      var app = Application.create( options );
-      var changes = ChangeDistributor.create( grunt );
+      setup( options );
 
       var uikit = path.dirname( app.require.toUrl( 'laxar_uikit' ) );
       var customization = path.dirname( app.require.toUrl( 'laxar_uikit_customization' ) );
@@ -93,6 +113,15 @@ module.exports = function( grunt ) {
 
          controls.forEach( function( directory ) {
             configureTarget( 'ax-control', directory );
+         } );
+
+         /* watch all files that the HttpClient has seen */
+         grunt.config.set( [ 'watch', 'ax-init' ], {
+            options: { spawn: false },
+            tasks: [ 'ax-init' ],
+            files: Object.keys( traced ).map( function( file ) {
+               return path.relative( base, file )
+            } )
          } );
 
          return {

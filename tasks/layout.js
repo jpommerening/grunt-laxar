@@ -8,6 +8,8 @@ module.exports = function( grunt ) {
 
    var path = require( 'path' );
    var multiplexTask = require( './lib/multiplex_task' );
+   var compassConfig = require( './lib/compass_config' );
+
    var defaults = {
       compass: {}
    };
@@ -15,18 +17,7 @@ module.exports = function( grunt ) {
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    grunt.registerMultiTask( 'ax-layout', 'Run layout specific tasks', multiplexTask( grunt, defaults, {
-      compass: function( config ) {
-         var basePath = this.target + '/default.theme';
-         if( !grunt.file.exists( basePath + '/scss' ) ) {
-            return null;
-         }
-
-         return {
-            options: {
-               basePath: basePath
-            }
-         };
-      }
+      compass: compassConfig( grunt, '*.theme' )
    } ) );
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////

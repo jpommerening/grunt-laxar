@@ -8,6 +8,7 @@ module.exports = function( grunt ) {
 
    var Application = require( '../lib/application' );
    var ChangeDistributor = require( './lib/change_distributor' );
+   var plural = require( '../lib/plural' );
    var path = require( 'path' );
    var q = require( 'q' );
    var _ = require( 'lodash' );
@@ -143,10 +144,14 @@ module.exports = function( grunt ) {
          grunt.log.writeln( '   Base URL: ' + app.baseUrl.cyan );
          grunt.log.writeln( '   Flow:     ' + path.relative( base, app.paths.FLOW_JSON ).cyan );
          grunt.log.writeln( '   Pages:    ' + path.relative( base, app.paths.PAGES ).cyan );
-         grunt.log.writeln( '   Layouts:  ' + path.relative( base, app.paths.LAYOUTS ).cyan + ' (' + result.layouts.length + ' layouts)' );
-         grunt.log.writeln( '   Themes:   ' + path.relative( base, app.paths.THEMES ).cyan + ' (' + result.themes.length + ' themes)' );
-         grunt.log.writeln( '   Widgets:  ' + path.relative( base, app.paths.WIDGETS ).cyan + ' (' + result.widgets.length + ' widgets)' );
-         grunt.log.writeln( '   Controls: ' + grunt.log.wordlist( controlPaths ) + ' (' + result.controls.length + ' controls)' );
+         grunt.log.writeln( '   Layouts:  ' + path.relative( base, app.paths.LAYOUTS ).cyan +
+                            plural( result.layouts.length, ' (%d layout)', ' (%d layouts)' ) );
+         grunt.log.writeln( '   Themes:   ' + path.relative( base, app.paths.THEMES ).cyan +
+                            plural( result.themes.length, ' (%d theme)', ' (%d themes)' ) );
+         grunt.log.writeln( '   Widgets:  ' + path.relative( base, app.paths.WIDGETS ).cyan +
+                            plural( result.widgets.length, ' (%d widget)', ' (%d widgets)' ) );
+         grunt.log.writeln( '   Controls: ' + grunt.log.wordlist( controlPaths ) +
+                            plural( result.controls.length, ' (%d control)', ' (%d controls)' ) );
          return q.when();
       } )
       .nodeify( done );

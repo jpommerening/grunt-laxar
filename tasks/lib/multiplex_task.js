@@ -6,13 +6,14 @@
 module.exports = function( grunt, defaults, adapters ) {
    'use strict';
 
-   var _ = require( 'lodash' );
+   var plural = require( '../../lib/plural' );
 
    return function() {
       var target = this.target;
       var options = this.options( defaults );
       var tasks = this.args.length ? this.args : Object.keys( options );
       var files = this.files;
+      var run = [];
 
       for( var i = 0; i < tasks.length; i++ ) {
          var task = tasks[i];
@@ -27,14 +28,18 @@ module.exports = function( grunt, defaults, adapters ) {
 
          if( config ) {
             grunt.config.set( [ task, target ], config );
-         } else {
-            tasks.splice( i, 1 );
+            run.push( task );
          }
       }
 
-      grunt.log.ok( 'Running %s tasks for %s.', tasks.length ? grunt.log.wordlist( tasks ) : 'no', target.cyan );
+      grunt.log.ok(
+         'Running %s %s for %s.',
+         grunt.log.wordlist( run ) || 'no',
+         plural( run.length, 'task', 'tasks' ),
+         target.cyan
+      );
 
-      tasks.forEach( function( task ) {
+      run.forEach( function( task ) {
          grunt.task.run( task + ':' + target );
       } );
    };

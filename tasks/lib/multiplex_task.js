@@ -6,42 +6,51 @@
 module.exports = function( grunt, defaults, adapters ) {
    'use strict';
 
-   var plural = require( '../../lib/plural' );
+   var q = require( 'q' );
 
    return function() {
+      var done = this.async();
       var target = this.target;
       var options = this.options( defaults );
       var tasks = this.args.length ? this.args : Object.keys( options );
       var files = this.files;
-      var run = [];
+      var self = this;
 
-      for( var i = 0; i < tasks.length; i++ ) {
-         var task = tasks[i];
+      q.all( tasks.map( function( task ) {
          var config = {
             options: options[ task ],
             files: files
          };
 
          if( task in adapters ) {
-            config = adapters[ task ].call( this, config );
+            config = adapters[ task ].call( self, config );
          }
 
-         if( config ) {
-            grunt.config.set( [ task, target ], config );
-            run.push( task );
+         return q.when( config, function( config ) {
+            if( config ) {
+               grunt.config.set( [ task, target ], config );
+               return task;
+            }
+         } );
+      } ) ).then( function( tasks ) {
+         var run = [];
+
+         for( var i = 0; i < tasks.length; i++ ) {
+            if( tasks[ i ] ) {
+               run.push( tasks[ i ] );
+            }
          }
-      }
 
-      grunt.log.ok(
-         'Running %s %s for %s.',
-         grunt.log.wordlist( run ) || 'no',
-         plural( run.length, 'task', 'tasks' ),
-         target.cyan
-      );
+         grunt.log.ok(
+            'Running %s for %s.',
+            grunt.log.wordlist( run ) || 'no tasks',
+            target.cyan
+         );
 
-      run.forEach( function( task ) {
-         grunt.task.run( task + ':' + target );
-      } );
+         run.forEach( function( task ) {
+            grunt.task.run( task + ':' + target );
+         } );
+      } ).nodeify( done );
    };
 
 };

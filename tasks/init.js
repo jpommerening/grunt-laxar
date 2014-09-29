@@ -14,11 +14,13 @@ module.exports = function( grunt ) {
    var _ = require( 'lodash' );
 
    var app;
-   var changes = ChangeDistributor.create( grunt );
-   var traced = Object.create( null );
+   var changes;
+   var traced;
 
    var setup = _.once( function( options ) {
       app = Application.create( options );
+      changes = ChangeDistributor.create( grunt );
+      traced = Object.create( null );
 
       app.httpClient.on( 'get', function( url ) {
          grunt.log.verbose.writeln( 'HttpClient: GET ' + url.cyan );
@@ -29,6 +31,11 @@ module.exports = function( grunt ) {
          if( traced[ url ] ) {
             app.httpClient.del( url );
          }
+      } );
+      grunt.config.set( [ 'ax' ], {
+         application: app,
+         changes: changes,
+         traced: traced
       } );
    } );
 
@@ -122,7 +129,9 @@ module.exports = function( grunt ) {
                return path.relative( base, file );
             } )
          } );
-         traced = Object.create( null );
+         Object.keys( traced ).forEach( function( key ) {
+            delete traced[ key ];
+         } );
 
          return {
             themes: themes,

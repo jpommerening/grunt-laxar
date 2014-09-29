@@ -12,8 +12,12 @@ module.exports = function( grunt ) {
          return null;
       }
 
-      /* TODO: get from Application instance */
-      var requireConfig = 'require_config.js';
+      var app = grunt.config.get( [ 'ax', 'application' ] );
+
+      if( !app ) {
+         grunt.fail.fatal( 'Application missing from Grunt config. Did you remember to run ax-init?' );
+      }
+
       var src = [].concat.apply( [], config.files.map( function( file ) {
          return grunt.file.match( [ '**/*.js' ], file.src );
       } ) );
@@ -22,11 +26,13 @@ module.exports = function( grunt ) {
          return;
       }
 
+      grunt.log.verbose.writeln( 'Karma using RequireJS config ' + app.requireConfig );
+
       return {
          options: {
             laxar: {
                specRunner: specRunner,
-               requireConfig: requireConfig
+               requireConfig: app.requireConfig
             }
          },
          files: [ {

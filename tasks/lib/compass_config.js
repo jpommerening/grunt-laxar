@@ -18,13 +18,15 @@ module.exports = function( grunt, subDirectory ) {
       var basePath = directories[ 0 ];
       var cssDir = path.join( basePath, 'css' );
       var sassDir = path.join( basePath, 'scss' );
-      var configFile = path.join( basePath, 'compass', 'config.rb' );
+
+      var app = grunt.config.get( [ 'ax', 'application' ] );
+
+      if( !app ) {
+         grunt.fail.fatal( 'Application missing from Grunt config. Did you remember to run ax-init?' );
+      }
 
       if( !grunt.file.exists( sassDir ) ) {
          return;
-      }
-      if( !grunt.file.exists( configFile ) ) {
-         configFile = undefined;
       }
 
       var src = [].concat.apply( [], config.files.map( function( file ) {
@@ -38,14 +40,40 @@ module.exports = function( grunt, subDirectory ) {
          return;
       }
 
-      return {
-         options: {
-            config: configFile,
-            basePath: basePath,
-            sassDir: path.relative( basePath, sassDir ),
-            cssDir: path.relative( basePath, cssDir )
-         },
-         src: src
-      };
+      return app.themes().then( function( themes ) {
+         var theme = /.*\/([^/.]+\.theme)(\/.*)?$/.exec( basePath );
+         var themeName = theme[ 1 ];
+
+         var configFile;
+         var directories = [ basePath, app.paths.DEFAULT_THEME ].concat( themes );
+
+         for( var i = 0; i < directories.length; i++ ) {
+            if( path.basename( directories[ i ] == themeName ) ) {
+               configFile = path.join( themes[ i ], 'compass', 'config.rb' );
+               if( grunt.file.exists( configFile ) ) {
+                  break;
+               } else {
+                  configFile = undefined;
+               }
+            }
+         }
+         if( !configFile ) {
+            throw new Error( 'Could not find \'compass/config.rb\' matching theme ' + themeName + ' in ' + directories.join( ', ' ) );
+         }
+
+         return path.relative( '.', configFile );
+      } ).then( function( configFile ) {
+         grunt.log.verbose.writeln( 'Compass using config ' + configFile );
+
+         return {
+            options: {
+               config: configFile,
+               basePath: basePath,
+               sassDir: path.relative( basePath, sassDir ),
+               cssDir: path.relative( basePath, cssDir )
+            },
+            src: src
+         };
+      } );
    };
 };

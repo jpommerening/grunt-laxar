@@ -14,13 +14,11 @@ module.exports = function( grunt ) {
    var _ = require( 'lodash' );
 
    var app;
-   var changes;
-   var traced;
+   var changes = ChangeDistributor.create( grunt );
+   var traced = Object.create( null );
 
    var setup = _.once( function( options ) {
       app = Application.create( options );
-      changes = ChangeDistributor.create( grunt );
-      traced = Object.create( null );
 
       app.httpClient.on( 'get', function( url ) {
          grunt.log.verbose.writeln( 'HttpClient: GET ' + url.cyan );
@@ -124,6 +122,7 @@ module.exports = function( grunt ) {
                return path.relative( base, file );
             } )
          } );
+         traced = Object.create( null );
 
          return {
             themes: themes,

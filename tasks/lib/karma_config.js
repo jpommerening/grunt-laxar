@@ -14,9 +14,13 @@ module.exports = function( grunt ) {
 
       /* TODO: get from Application instance */
       var requireConfig = 'require_config.js';
-      var files = config.files.map( function( file ) {
-         return { src: grunt.file.match( [ '**/*.js' ], file.src ), included: false };
-      } );
+      var src = [].concat.apply( [], config.files.map( function( file ) {
+         return grunt.file.match( [ '**/*.js' ], file.src );
+      } ) );
+
+      if( src.length === 0 ) {
+         return;
+      }
 
       return {
          options: {
@@ -25,7 +29,10 @@ module.exports = function( grunt ) {
                requireConfig: requireConfig
             }
          },
-         files: files
+         files: [ {
+            src: src,
+            included: false
+         } ]
       };
    };
 };

@@ -48,7 +48,7 @@ module.exports = function( grunt, subDirectory ) {
          var directories = [ basePath, app.paths.DEFAULT_THEME ].concat( themes );
 
          for( var i = 0; i < directories.length; i++ ) {
-            if( path.basename( directories[ i ] == themeName ) ) {
+            if( path.basename( directories[ i ] === themeName ) ) {
                configFile = path.join( themes[ i ], 'compass', 'config.rb' );
                if( grunt.file.exists( configFile ) ) {
                   break;

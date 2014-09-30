@@ -8,6 +8,10 @@ module.exports = function( grunt, defaults, adapters ) {
 
    var q = require( 'q' );
 
+   /**
+    * Grunt task implementation that can multiplex it's own
+    * configuration across multiple other tasks.
+    */
    return function() {
       var done = this.async();
       var target = this.target;

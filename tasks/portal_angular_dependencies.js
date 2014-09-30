@@ -29,7 +29,6 @@ module.exports = function( grunt ) {
             base: '.',
             requireConfig: 'require_config.js'
          } );
-         var base = path.resolve( options.base );
          var done = this.async();
          var files = this.files;
 
@@ -47,7 +46,9 @@ module.exports = function( grunt ) {
                   return done( err );
                }
 
-               var widgets = _( results ).pluck( 'widgets' ).flatten().uniq().value();
+               var widgets = _( results ).pluck( 'widgets' ).flatten().uniq().map( function( widget ) {
+                  return path.relative( app.baseUrl, widget );
+               } ).value();
                var controls = _( results ).pluck( 'controls' ).flatten().uniq().value();
                var code = generateBootstrapCode( widgets.concat( controls ) );
 

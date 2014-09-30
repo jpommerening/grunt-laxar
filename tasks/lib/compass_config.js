@@ -19,7 +19,7 @@ module.exports = function( grunt, subDirectory ) {
       var cssDir = path.join( basePath, 'css' );
       var sassDir = path.join( basePath, 'scss' );
 
-      var app = grunt.config.get( [ 'ax', 'application' ] );
+      var app = grunt.config.getRaw( [ 'ax', 'application' ] );
 
       if( !app ) {
          grunt.fail.fatal( 'Application missing from Grunt config. Did you remember to run ax-init?' );
@@ -48,8 +48,8 @@ module.exports = function( grunt, subDirectory ) {
          var directories = [ basePath, app.paths.DEFAULT_THEME ].concat( themes );
 
          for( var i = 0; i < directories.length; i++ ) {
-            if( path.basename( directories[ i ] === themeName ) ) {
-               configFile = path.join( themes[ i ], 'compass', 'config.rb' );
+            if( path.basename( directories[ i ] ) === themeName ) {
+               configFile = path.join( directories[ i ], 'compass', 'config.rb' );
                if( grunt.file.exists( configFile ) ) {
                   break;
                } else {

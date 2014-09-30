@@ -12,7 +12,7 @@ module.exports = function( grunt ) {
          return null;
       }
 
-      var app = grunt.config.get( [ 'ax', 'application' ] );
+      var app = grunt.config.getRaw( [ 'ax', 'application' ] );
 
       if( !app ) {
          grunt.fail.fatal( 'Application missing from Grunt config. Did you remember to run ax-init?' );

@@ -142,9 +142,7 @@ module.exports = function( grunt ) {
       } )
       .then( function( result ) {
          var controlPaths = _( result.controls )
-            .map( app.require.toUrl )
             .map( path.dirname )
-            .map( normalizePath )
             .uniq()
             .value();
 

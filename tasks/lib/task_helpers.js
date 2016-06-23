@@ -17,7 +17,7 @@ module.exports = function( grunt, taskName ) {
    return {
       ARTIFACTS_FILE: ARTIFACTS,
       artifactsListing: artifactsListing,
-      getResourcePaths: getResourcePaths,
+      getResourcePaths: helpers.getResourcePaths || getResourcePaths,
       writeIfChanged: writeIfChanged,
       flatten: helpers.flatten,
       fileExists: helpers.fileExists,

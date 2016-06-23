@@ -41,15 +41,25 @@ module.exports = function( grunt ) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       var artifacts = helpers.artifactsListing( flowsDirectory, flowId );
-      var artifactList = flatten( Object.keys( artifacts ).map( lookup( artifacts ) ) );
+      var resultsPromise;
 
-      var listings = {};
-      var listingPromises = artifactList.filter( hasListing )
-         .map( artifactProcessor( listings, artifacts.themes ) );
+      try {
+         resultsPromise = require( 'laxar-tooling' ).collectResources( artifacts, options );
+      }
+      catch( err ) {
+         var artifactList = flatten( Object.keys( artifacts ).map( lookup( artifacts ) ) );
 
-      // wait for all file-embeddings
-      q.all( listingPromises ).then( function() {
-         var results = normalize( listings );
+         var listings = {};
+         var listingPromises = artifactList.filter( hasListing )
+            .map( artifactProcessor( listings, artifacts.themes ) );
+
+         // wait for all file-embeddings
+         resultsPromise = q.all( listingPromises ).then( function() {
+            return normalize( listings );
+         } );
+      }
+
+      resultsPromise.then( function( results ) {
          helpers.writeIfChanged(
             path.join( flowsDirectory, flowId, RESOURCES_FILE ),
             JSON.stringify( results, null, 3 ),

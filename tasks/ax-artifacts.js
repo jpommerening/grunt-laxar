@@ -8,14 +8,11 @@ module.exports = function( grunt ) {
 
    var TASK = 'laxar-artifacts';
 
-   var fs = require( 'fs' );
-   var q = require( 'q' );
-   var glob = q.nfbind( require( 'glob' ) );
    var path = require( '../lib/path-platform/path' ).posix;
-   var async = require( 'async' );
-   var jsonlint = require( 'jsonlint' );
 
-   var artifactCollector = require( '../lib/artifact_collector' );
+   var laxarTooling = require( 'laxar-tooling' );
+   var artifactCollector = laxarTooling.artifactCollector;
+
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
    var flatten = helpers.flatten;
 
@@ -42,7 +39,8 @@ module.exports = function( grunt ) {
 
       grunt.verbose.writeln( TASK + ': starting with flow "' + flowId + '"' );
 
-      var collector = artifactCollector.create( grunt.log, {
+      var requirejsHelper = require( '../lib/require_config' ).helper( '.' );
+      var collector = artifactCollector.create( grunt.log, requirejsHelper, {
          handleDeprecation: grunt.verbose.writeln.bind( grunt.verbose )
       } );
       var destFile = path.join( flowsDirectory, flowId, helpers.ARTIFACTS_FILE );

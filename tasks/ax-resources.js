@@ -9,11 +9,10 @@ module.exports = function( grunt ) {
    var TASK = 'laxar-resources';
    var RESOURCES_FILE = 'resources.json';
 
-   var fs = require( 'fs' );
-   var q = require( 'q' );
    var path = require( '../lib/path-platform/path' ).posix;
 
-   var readFile = q.nfbind( fs.readFile );
+   var laxarTooling = require( 'laxar-tooling' );
+   var collectResources = laxarTooling.collectResources;
 
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
    var flatten = helpers.flatten;
@@ -41,25 +40,8 @@ module.exports = function( grunt ) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       var artifacts = helpers.artifactsListing( flowsDirectory, flowId );
-      var resultsPromise;
 
-      try {
-         resultsPromise = require( 'laxar-tooling' ).collectResources( artifacts, options );
-      }
-      catch( err ) {
-         var artifactList = flatten( Object.keys( artifacts ).map( lookup( artifacts ) ) );
-
-         var listings = {};
-         var listingPromises = artifactList.filter( hasListing )
-            .map( artifactProcessor( listings, artifacts.themes ) );
-
-         // wait for all file-embeddings
-         resultsPromise = q.all( listingPromises ).then( function() {
-            return normalize( listings );
-         } );
-      }
-
-      resultsPromise.then( function( results ) {
+      collectResources( artifacts, options ).then( function( results ) {
          helpers.writeIfChanged(
             path.join( flowsDirectory, flowId, RESOURCES_FILE ),
             JSON.stringify( results, null, 3 ),
@@ -71,108 +53,6 @@ module.exports = function( grunt ) {
          grunt.log.error( TASK + ': ERROR:', err );
          done( err );
       } );
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      function normalize( listing ) {
-         if( typeof( listing ) !== 'object' ) {
-            return listing;
-         }
-         var keys = Object.keys( listing );
-         keys.sort();
-         var result = {};
-         keys.forEach( function( key ) {
-            result[ key ] = normalize( listing[ key ] );
-         } );
-         return result;
-      }
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      function hasListing( artifact ) {
-         return artifact.resources && ( artifact.resources.list || artifact.resources.embed );
-      }
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      function artifactProcessor( listings, themes ) {
-
-         var getPathsToEmbed = helpers.getResourcePaths( themes, 'embed' );
-         var getPathsToList = helpers.getResourcePaths( themes, 'list' );
-
-         var processed = {};
-
-         return function process( artifact ) {
-            var embedPromise = options.embed ?
-               q.all( getPathsToEmbed( artifact ).map( embed ) ) :
-               q.when( [] );
-
-            // Order matters, since knownMissing is tracked as a side-effect:
-            return embedPromise.then( function() {
-               return q.all( getPathsToList( artifact ).map( listIfExists ) );
-            } );
-         };
-
-         /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-         function embed( filePath ) {
-            if( processed[ filePath ] ) {
-               return;
-            }
-
-            processed[ filePath ] = true;
-            return readFile( filePath, 'utf-8' ).then( function( contents ) {
-               insertRecursively( listings, filePath.split( path.sep ), preprocess( filePath, contents ) );
-            } ).catch( function( err ) {
-               if( err.code !== 'ENOENT' ) { throw err; }
-            } );
-         }
-
-         /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-         function list( filePath ) {
-            return insertRecursively( listings, filePath.split( path.sep ), 1 );
-         }
-
-         function listIfExists( filePath ) {
-            if( processed[ filePath ] ) {
-               return q.when();
-            }
-            processed[ filePath ] = true;
-            return fileExists( filePath ).then( function( exists ) {
-               return exists ? list( filePath ) : [];
-            } );
-         }
-
-         /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-         function insertRecursively( node, segments, value ) {
-            var segment = segments.shift();
-            if( !segments.length ) {
-               node[ segment ] = value;
-               return;
-            }
-            var child = node[ segment ] = ( node[ segment ] || {} );
-            insertRecursively( child, segments, value  );
-         }
-
-      }
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      function preprocess( filePath, contents ) {
-         var type = path.extname( filePath );
-         if( type === '.json' ) {
-            // Eliminate whitespace by re-serializing:
-            return JSON.stringify( JSON.parse( contents ) );
-         }
-         if( type === '.html' ) {
-            // Eliminate (some) whitespace:
-            return contents.replace( /[\n\r ]+/g, ' ' );
-         }
-         return contents;
-      }
-
    }
 
 };

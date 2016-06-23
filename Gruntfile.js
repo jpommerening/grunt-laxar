@@ -13,7 +13,7 @@ module.exports = function( grunt ) {
       },
       jshint: {
          gruntfile: [
-            __filename
+            'Gruntfile.js'
          ],
          lib: [
             'lib/*.js'

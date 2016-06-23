@@ -7,17 +7,17 @@ module.exports = function( grunt, taskName ) {
    'use strict';
 
    var path = require( '../../lib/path-platform/path' ).posix;
-   var fs = require( 'fs' );
-   var q = require( 'q' );
 
-   var helpers = require( '../../lib/helpers' );
+   var laxarTooling = require( 'laxar-tooling' );
+   var helpers = laxarTooling.helpers;
+   var getResourcePaths = laxarTooling.getResourcePaths;
 
    var ARTIFACTS = path.join( 'tooling', 'artifacts.json' );
 
    return {
       ARTIFACTS_FILE: ARTIFACTS,
       artifactsListing: artifactsListing,
-      getResourcePaths: helpers.getResourcePaths || getResourcePaths,
+      getResourcePaths: getResourcePaths,
       writeIfChanged: writeIfChanged,
       flatten: helpers.flatten,
       fileExists: helpers.fileExists,
@@ -39,64 +39,6 @@ module.exports = function( grunt, taskName ) {
          return {};
       }
       return grunt.file.readJSON( source );
-   }
-
-   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-   /**
-    * Generate a function that maps artifacts to resource paths (to watch, list or embed),
-    * taking into account the available themes.
-    *
-    * Note: when asking for `list` paths, `embed` paths will be included (embedding implies listing)!
-    * This spares artifact developers from specifying embedded resources twice.
-    *
-    * @param {Array<Object>} themes
-    *   a list of themes, each with a `name` property (e.g. `'default.theme'`)
-    * @param {string} resourceType
-    *   the type of resource
-    *
-    * @return {Function<string, Array<string>>}
-    *   a function to provide the desired resource paths for the given artifact
-    */
-   function getResourcePaths( themes, resourceType ) {
-      return function( artifact ) {
-         var paths = extract( artifact, resourceType );
-         if( resourceType === 'list' ) {
-            // Embedding implies listing:
-            return paths.concat( extract( artifact, 'embed' ) );
-         }
-         return paths;
-      };
-
-      function extract( artifact, type ) {
-         if( !artifact.resources || !artifact.resources[ type ] ) {
-            return [];
-         }
-         return helpers.flatten( artifact.resources[ type ].map( expandThemes ) ).map( fixPaths );
-
-         function expandThemes( pattern ) {
-            var isThemed = 0 === pattern.indexOf( '*.theme' + path.sep );
-            return isThemed ? themes.map( substituteTheme( pattern ) ) : [ pattern ];
-         }
-
-         function fixPaths( pattern ) {
-            var isSelf = pattern === '.';
-            var isAbsolute = 0 === pattern.indexOf( path.sep );
-            return isSelf ? artifact.path : (
-               isAbsolute ? pattern.substring( 1 ) : path.join( artifact.path, pattern )
-            );
-         }
-      }
-   }
-
-   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-   function substituteTheme( pattern ) {
-      return function( theme ) {
-         var segments = pattern.split( path.sep );
-         segments[ 0 ] = theme.name;
-         return segments.join( path.sep );
-      };
    }
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////

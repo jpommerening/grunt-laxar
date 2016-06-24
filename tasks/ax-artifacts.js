@@ -40,8 +40,20 @@ module.exports = function( grunt ) {
       grunt.verbose.writeln( TASK + ': starting with flow "' + flowId + '"' );
 
       var requirejsHelper = require( '../lib/require_config' ).helper( '.' );
-      var collector = artifactCollector.create( grunt.log, requirejsHelper, {
-         handleDeprecation: grunt.verbose.writeln.bind( grunt.verbose )
+      var collector = artifactCollector.create( grunt.log, {
+         handleDeprecation: grunt.verbose.writeln.bind( grunt.verbose ),
+         projectPath: requirejsHelper.projectPath
+         /* just for testing:
+         readJson: function( filePath ) {
+            var absPath = path.resolve( filePath );
+            try {
+               return Promise.resolve( grunt.file.readJSON( absPath ) );
+            }
+            catch( err ) {
+               return Promise.reject( err );
+            }
+         }
+         */
       } );
       var destFile = path.join( flowsDirectory, flowId, helpers.ARTIFACTS_FILE );
 

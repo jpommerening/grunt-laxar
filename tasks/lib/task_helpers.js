@@ -7,9 +7,10 @@ module.exports = function( grunt, taskName ) {
    'use strict';
 
    var path = require( '../../lib/path-platform/path' ).posix;
+   var fs = require( 'fs' );
 
+   var helpers = require( '../../lib/helpers' );
    var laxarTooling = require( 'laxar-tooling' );
-   var helpers = laxarTooling.helpers;
    var getResourcePaths = laxarTooling.getResourcePaths;
 
    var ARTIFACTS = path.join( 'tooling', 'artifacts.json' );
@@ -19,11 +20,9 @@ module.exports = function( grunt, taskName ) {
       artifactsListing: artifactsListing,
       getResourcePaths: getResourcePaths,
       writeIfChanged: writeIfChanged,
+      fileExists: fileExists,
       flatten: helpers.flatten,
-      fileExists: helpers.fileExists,
-      lookup: helpers.lookup,
-      once: helpers.once,
-      promiseOnce: helpers.promiseOnce
+      lookup: helpers.lookup
    };
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +70,16 @@ module.exports = function( grunt, taskName ) {
       var endMs = Date.now() - startMs;
       grunt.log.ok( taskName + ': ' + words + ' (' + endMs + 'ms)' );
       return hasChanged;
+   }
+
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   function fileExists( path ) {
+      return new Promise( function( resolve, reject ) {
+         return fs.access( path, fs.F_OK, function( err ) {
+            return resolve( !err );
+         } );
+      } );
    }
 
 };

@@ -15,9 +15,6 @@ module.exports = function( grunt ) {
    var collectResources = laxarTooling.collectResources;
 
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
-   var flatten = helpers.flatten;
-   var lookup = helpers.lookup;
-   var fileExists = helpers.fileExists;
 
    grunt.registerMultiTask( TASK,
       'Generate a resource listing for the LaxarJS runtime to determine which resources are available.',

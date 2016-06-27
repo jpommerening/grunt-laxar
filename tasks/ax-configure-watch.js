@@ -159,7 +159,7 @@ module.exports = function( grunt ) {
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    function selectArtifacts( artifacts, types ) {
-      return helpers.flatten(
+      return flatten(
          ( types || Object.keys( artifacts ) ).map( lookup( artifacts ) )
       );
    }

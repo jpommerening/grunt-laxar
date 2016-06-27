@@ -19,6 +19,8 @@ module.exports = function( grunt ) {
    load( grunt, 'grunt-contrib-cssmin' );
 
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
+   var flatten = helpers.flatten;
+   var lookup = helpers.lookup;
 
    grunt.registerMultiTask( TASK,
       'Combines CSS stylesheets of flow artifacts using clean-css, to provide a small single-file version.',
@@ -89,7 +91,7 @@ module.exports = function( grunt ) {
                .filter( defined );
 
             return {
-               src: helpers.flatten( [ path.join( theme.path, 'css', 'theme.css' ) ].concat( sources ) ),
+               src: flatten( [ path.join( theme.path, 'css', 'theme.css' ) ].concat( sources ) ),
                dest: path.join( flowsDirectory, flowId, RESULT_DIRECTORY, theme.name + '.css' )
             };
          }
@@ -129,8 +131,8 @@ module.exports = function( grunt ) {
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    function selectArtifacts( artifacts, types ) {
-      return helpers.flatten(
-         ( types || Object.keys( artifacts ) ).map( helpers.lookup( artifacts ) )
+      return flatten(
+         ( types || Object.keys( artifacts ) ).map( lookup( artifacts ) )
       );
    }
 

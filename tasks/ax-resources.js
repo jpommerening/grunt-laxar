@@ -12,7 +12,7 @@ module.exports = function( grunt ) {
    var path = require( '../lib/path-platform/path' ).posix;
 
    var laxarTooling = require( 'laxar-tooling' );
-   var collectResources = laxarTooling.collectResources;
+   var resourceCollector = laxarTooling.resourceCollector;
 
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
 
@@ -37,19 +37,23 @@ module.exports = function( grunt ) {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       var artifacts = helpers.artifactsListing( flowsDirectory, flowId );
-
-      collectResources( artifacts, options ).then( function( results ) {
-         helpers.writeIfChanged(
-            path.join( flowsDirectory, flowId, RESOURCES_FILE ),
-            JSON.stringify( results, null, 3 ),
-            startMs
-         );
-         done();
-      } )
-      .catch( function( err ) {
-         grunt.log.error( TASK + ': ERROR:', err );
-         done( err );
+      var collector = resourceCollector.create( grunt.log, {
+         embed: options.embed
       } );
+
+      collector.collectResources( artifacts )
+         .then( function( results ) {
+            helpers.writeIfChanged(
+               path.join( flowsDirectory, flowId, RESOURCES_FILE ),
+               JSON.stringify( results, null, 3 ),
+               startMs
+            );
+            done();
+         } )
+         .catch( function( err ) {
+            grunt.log.error( TASK + ': ERROR:', err );
+            done( err );
+         } );
    }
 
 };

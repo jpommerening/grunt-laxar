@@ -42,7 +42,7 @@ module.exports = function( grunt ) {
       var requirejsHelper = require( '../lib/require_config' ).helper( '.' );
       var collector = artifactCollector.create( grunt.log, {
          handleDeprecation: grunt.verbose.writeln.bind( grunt.verbose ),
-         projectPath: requirejsHelper.projectPath
+         projectPath: function( ref ) { return Promise.resolve( requirejsHelper.projectPath( ref ) ); }
          /* just for testing:
          readJson: function( filePath ) {
             var absPath = path.resolve( filePath );

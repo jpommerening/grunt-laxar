@@ -9,12 +9,13 @@ module.exports = function( grunt ) {
    var TASK = 'laxar-dependencies';
    var DEPENDENCIES_FILE = 'dependencies.js';
 
-   var fs = require( 'fs' );
-   var q = require( 'q' );
    var path = require( '../lib/path-platform/path' ).posix;
-   var async = require( 'async' );
+
+   var laxarTooling = require( 'laxar-tooling' );
+   var dependencyCollector = laxarTooling.dependencyCollector;
 
    var helpers = require( './lib/task_helpers' )( grunt, TASK );
+
 
    grunt.registerMultiTask( TASK,
       'Generate an AMD-module that includes all dependencies needed by a flow.',
@@ -23,61 +24,61 @@ module.exports = function( grunt ) {
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-   function runDependencies( self ) {
+   function runDependencies( task ) {
 
       var startMs = Date.now();
-      var flowId = self.nameArgs.split( ':' )[ 1 ];
-      var flowsDirectory = self.files[ 0 ].src[ 0 ];
+      var done = task.async();
 
-      var modulesByTechnology = {};
+      var flowId = task.nameArgs.split( ':' )[ 1 ];
+      var flowsDirectory = task.files[ 0 ].src[ 0 ];
+      var options = task.options( {
+      } );
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
       var artifacts = helpers.artifactsListing( flowsDirectory, flowId );
-      artifacts.controls.concat( artifacts.widgets ).filter( hasModule ).forEach( registerModule );
+      var collector = dependencyCollector.create( grunt.log, {} );
 
-      var result = generateDependenciesModule( modulesByTechnology );
-      helpers.writeIfChanged( path.join( flowsDirectory, flowId, DEPENDENCIES_FILE ), result, startMs );
+      collector.collectDependencies( artifacts )
+         .then( generateDependenciesModule )
+         .then( function( code ) {
+            helpers.writeIfChanged(
+               path.join( flowsDirectory, flowId, DEPENDENCIES_FILE ),
+               code,
+               startMs
+            );
+            done();
+         } )
+         .catch( function( err ) {
+            grunt.log.error( TASK + ': ERROR:', err );
+            done( err );
+         } );
+   }
 
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      function hasModule( artifact ) {
-         return artifact.integration &&
-                artifact.references &&
-                artifact.references.amd &&
-                artifact.references.amd.module;
-      }
+   function generateDependenciesModule( modulesByTechnology ) {
+      var dependencies = [];
+      var registryEntries = [];
 
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
+      Object.keys( modulesByTechnology )
+         .reduce( function( start, technology ) {
+            var end = start + modulesByTechnology[ technology].length;
+            [].push.apply( dependencies, modulesByTechnology[ technology ] );
+            registryEntries.push( '\'' + technology + '\': modules.slice( ' + start + ', ' + end + ' )' );
+            return end;
+         }, 0 );
 
-      function registerModule( artifact ) {
-         var technology = artifact.integration.technology;
-         modulesByTechnology[ technology ] = modulesByTechnology[ technology ] || [];
-         modulesByTechnology[ technology].push( artifact.references.amd.module );
-      }
+      var requireString = '[\n   \'' + dependencies.join( '\',\n   \'' ) + '\'\n]';
 
-      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      function generateDependenciesModule( modulesByTechnology ) {
-         var dependencies = [];
-         var registryEntries = [];
-
-         Object.keys( modulesByTechnology )
-            .reduce( function( start, technology ) {
-               var end = start + modulesByTechnology[ technology].length;
-               [].push.apply( dependencies, modulesByTechnology[ technology ] );
-               registryEntries.push( '\'' + technology + '\': modules.slice( ' + start + ', ' + end + ' )' );
-               return end;
-            }, 0 );
-
-         var requireString = '[\n   \'' + dependencies.join( '\',\n   \'' ) + '\'\n]';
-
-         return 'define( ' + requireString + ', function() {\n' +
-                '   \'use strict\';\n' +
-                '\n' +
-                '   var modules = [].slice.call( arguments );\n' +
-                '   return {\n' +
-                '      ' + registryEntries.join( ',\n      ' ) + '\n' +
-                '   };\n' +
-                '} );\n';
-      }
+      return 'define( ' + requireString + ', function() {\n' +
+             '   \'use strict\';\n' +
+             '\n' +
+             '   var modules = [].slice.call( arguments );\n' +
+             '   return {\n' +
+             '      ' + registryEntries.join( ',\n      ' ) + '\n' +
+             '   };\n' +
+             '} );\n';
    }
 
 };

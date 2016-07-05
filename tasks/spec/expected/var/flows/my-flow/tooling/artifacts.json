@@ -76,6 +76,10 @@
    ],
    "pages": [
       {
+         "layouts": [
+            "example",
+            "start"
+         ],
          "path": "application/pages/start.json",
          "resources": {
             "watch": [

@@ -3,6 +3,9 @@
    "areas": {
       "content": [
          {
+            "layout": "example"
+         },
+         {
             "widget": "default/test_widget",
             "features": {
             }

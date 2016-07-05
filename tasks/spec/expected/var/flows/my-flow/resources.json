@@ -19,7 +19,7 @@
          }
       },
       "pages": {
-         "start.json": "{\"layout\":\"start\",\"areas\":{\"content\":[{\"widget\":\"default/test_widget\",\"features\":{}},{\"widget\":\"default/test_widget\",\"features\":{}},{\"widget\":\"default/local_widget\",\"features\":{}},{\"widget\":\"default/plain_widget\"},{\"widget\":\"amd:bower-widget\"},{\"widget\":\"default/plain-activity\"}]}}"
+         "start.json": "{\"layout\":\"start\",\"areas\":{\"content\":[{\"layout\":\"example\"},{\"widget\":\"default/test_widget\",\"features\":{}},{\"widget\":\"default/test_widget\",\"features\":{}},{\"widget\":\"default/local_widget\",\"features\":{}},{\"widget\":\"default/plain_widget\"},{\"widget\":\"amd:bower-widget\"},{\"widget\":\"default/plain-activity\"}]}}"
       }
    },
    "bower_components": {

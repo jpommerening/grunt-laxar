@@ -46,7 +46,13 @@ module.exports = function( grunt ) {
       } );
       var destFile = path.join( flowsDirectory, flowId, helpers.ARTIFACTS_FILE );
 
-      collector.collectArtifacts( flatten( task.files.map( function( f ) { return f.src; } ) ) )
+      var sources = flatten( task.files.map( function( f ) { return f.src; } ) );
+      var themes = grunt.file.expand( {
+         filter: 'isDirectory',
+         cwd: requirejsHelper.projectPath( 'laxar-path-themes' )
+      }, '*.theme' ).concat( [ 'default.theme' ] );
+
+      collector.collectArtifacts( sources, themes )
          .then( function( artifacts ) {
             sortByPath( artifacts );
             var newResult = JSON.stringify( artifacts, null, 3 );
